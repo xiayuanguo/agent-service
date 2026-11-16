@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from typing import List
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 import uvicorn
@@ -28,6 +28,12 @@ app = FastAPI(
     debug=settings.app.debug,
     lifespan=lifespan,
 )
+
+
+from app.modules.product.router import router as product_router
+
+# 创建 app 后注册路由
+app.include_router(product_router)
 
 @app.get("/health", summary="健康检测接口")
 async def health_check() -> dict[str, str]:
