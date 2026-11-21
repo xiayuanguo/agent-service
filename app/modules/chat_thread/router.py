@@ -1,18 +1,24 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infra.database import get_session
 from .schemas import *
 from .service import ChatThreadService
+from app.modules.chat_thread.schemas import ChatHistoryResponse
 
 router = APIRouter(prefix="/api/v1/chat-threads", tags=["会话管理的接口"])
 
 
-def get_service(session: AsyncSession = Depends(get_session)):
-    return ChatThreadService(session)
-
+async def get_service(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> ChatThreadService:
+    return ChatThreadService(
+        session=session,
+        agent=request.app.state.agent,
+    )
 
 @router.post("", response_model=ChatThreadResponse)
 async def create_chat_thread(
@@ -62,3 +68,16 @@ async def delete_chat_thread(
 
     await service.delete(thread_id, user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+from app.modules.chat_thread.schemas import ChatHistoryResponse
+
+
+@router.get("/{thread_id}/messages", response_model=ChatHistoryResponse)
+async def get_chat_history(
+    thread_id: UUID,
+    user_id: Annotated[int, Header(alias="x-user-id")],
+    service: ChatThreadService = Depends(get_service),
+):
+    """查询指定会话的历史消息"""
+
+    return await service.get_history(thread_id, user_id)

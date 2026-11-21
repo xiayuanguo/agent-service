@@ -1,5 +1,8 @@
 from datetime import datetime
 from uuid import UUID
+from typing import Any, Literal
+
+from pydantic import BaseModel
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -22,3 +25,17 @@ class ChatThreadResponse(BaseModel):
     title: str
     created_at: datetime
     updated_at: datetime
+
+
+class ChatMessageResponse(BaseModel):
+    """历史消息"""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatHistoryResponse(BaseModel):
+    """会话历史响应"""
+
+    thread_id: UUID
+    messages: list[ChatMessageResponse]
